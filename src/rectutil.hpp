@@ -4,28 +4,25 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-using namespace std;
-using namespace cv;
-
 namespace ph {
   namespace rectu {
-    vector<Rect> copy(const vector<Rect>& rects);
-    void shiftRects(const vector<Rect>& rects, vector<Rect>& out, int sx, int sy);
-    void createRectsFromKeypoints(const vector<vector<KeyPoint>>& categorizedPoints, vector<Rect>& out, bool check = true);
-    bool isValidRect(const Rect& r);
-    bool intersect(const Rect& r1, const Rect& r2, Rect& connected, int marginThreshold = 0);
-    bool inBox(const Point2i& pt, const vector<Rect>& rects, int margin = 0);
-    void mergeRects(const vector<Rect>& inputRects, vector<Rect>& out, int threshold = 0);
-    void mergeRectsIfSameCenter(const vector<Rect>& inputRects, const vector<Point2i>& centers, vector<Rect>& out, vector<Point2i>& cOut, int threshold = 0);
-    int volume(const Rect& rect);
-    void filterIntersections(const vector<Rect> inRects1, const vector<Rect> inRects2, const vector<Point2i> inCenters, 
-        vector<Rect> outRects1, vector<Rect> outRects2, vector<Point2i> outCenters);
-    bool allClose(const Mat& img1, const Rect& r1, const Mat& img2, const Rect& r2,
-        Mat& roi1, Mat& roi2, Point2i& sv, int dr = 2);
-    bool allCloseWithShift(const Mat& img1, const Rect& r1, const Mat& img2, const Rect& r2, const Point2i& sv);
-    void nonzeroRects(const Mat& input, int dx, int dy, vector<Rect>& out);
-    bool expand(const vector<Rect>& rects, const int targetIndex, const int rows, const int cols, Rect& out);
-    void drawRects(Mat& inOutImg, const vector<Rect>& rects, const Scalar& color = Scalar(255, 0, 0), int w = 1);
+    std::vector<cv::Rect> copy(const std::vector<cv::Rect>& rects);
+    void shiftRects(const std::vector<cv::Rect>& rects, std::vector<cv::Rect>& out, int sx, int sy);
+    void createRectsFromKeypoints(const std::vector<std::vector<cv::KeyPoint>>& categorizedPoints, std::vector<cv::Rect>& out, bool check = true);
+    bool isValidRect(const cv::Rect& r);
+    bool intersect(const cv::Rect& r1, const cv::Rect& r2, cv::Rect& connected, int marginThreshold = 0);
+    bool inBox(const cv::Point2i& pt, const std::vector<cv::Rect>& rects, int margin = 0);
+    void mergeRects(const std::vector<cv::Rect>& inputRects, std::vector<cv::Rect>& out, int threshold = 0);
+    void mergeRectsIfSameCenter(const std::vector<cv::Rect>& inputRects, const std::vector<cv::Point2i>& centers, std::vector<cv::Rect>& out, std::vector<cv::Point2i>& cOut, int threshold = 0);
+    int volume(const cv::Rect& rect);
+    void filterIntersections(const std::vector<cv::Rect> inRects1, const std::vector<cv::Rect> inRects2, const std::vector<cv::Point2i> inCenters, 
+        std::vector<cv::Rect> outRects1, std::vector<cv::Rect> outRects2, std::vector<cv::Point2i> outCenters);
+    bool allClose(const cv::Mat& img1, const cv::Rect& r1, const cv::Mat& img2, const cv::Rect& r2,
+        cv::Mat& roi1, cv::Mat& roi2, cv::Point2i& sv, int dr = 2);
+    bool allCloseWithShift(const cv::Mat& img1, const cv::Rect& r1, const cv::Mat& img2, const cv::Rect& r2, const cv::Point2i& sv);
+    void nonzeroRects(const cv::Mat& input, int dx, int dy, std::vector<cv::Rect>& out);
+    bool expand(const std::vector<cv::Rect>& rects, const int targetIndex, const int rows, const int cols, cv::Rect& out);
+    void drawRects(cv::Mat& inOutImg, const std::vector<cv::Rect>& rects, const cv::Scalar& color = cv::Scalar(255, 0, 0), int w = 1);
   }
 }
 

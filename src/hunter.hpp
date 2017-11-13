@@ -4,9 +4,6 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-using namespace std;
-using namespace cv;
-
 namespace ph {
 
   struct DiffConfig {
@@ -22,17 +19,17 @@ namespace ph {
 
   struct PixelMatchingResult {
     bool isMatched;
-    Point2i translate;
-    Rect center1;
-    Rect bounding1;
-    Rect center2;
-    Rect bounding2;
-    vector<Rect> diffMarkers1;
-    vector<Rect> diffMarkers2;
+    cv::Point2i translate;
+    cv::Rect center1;
+    cv::Rect bounding1;
+    cv::Rect center2;
+    cv::Rect bounding2;
+    std::vector<cv::Rect> diffMarkers1;
+    std::vector<cv::Rect> diffMarkers2;
     PixelMatchingResult() {
       this->isMatched = true;
     }
-    PixelMatchingResult(const Rect& center1, const Rect& bounding1, const Rect& center2,  const Rect& bounding2) {
+    PixelMatchingResult(const cv::Rect& center1, const cv::Rect& bounding1, const cv::Rect& center2,  const cv::Rect& bounding2) {
       this->isMatched = true;
       this->center1 = center1;
       this->bounding1 = bounding1;
@@ -40,8 +37,8 @@ namespace ph {
       this->bounding2 = bounding2;
     }
     PixelMatchingResult(
-        const Rect& center1, const Rect& bounding1, const vector<Rect>& diffMarkers1,
-        const Rect& center2, const Rect& bounding2, const vector<Rect>& diffMarkers2) {
+        const cv::Rect& center1, const cv::Rect& bounding1, const std::vector<cv::Rect>& diffMarkers1,
+        const cv::Rect& center2, const cv::Rect& bounding2, const std::vector<cv::Rect>& diffMarkers2) {
       this->isMatched = false;
       this->center1 = center1;
       this->bounding1 = bounding1;
@@ -53,18 +50,18 @@ namespace ph {
   };
 
   struct DiffResult {
-    vector<PixelMatchingResult> matches;
-    vector<Rect> strayingRects1;
-    vector<Rect> strayingRects2;
+    std::vector<PixelMatchingResult> matches;
+    std::vector<cv::Rect> strayingRects1;
+    std::vector<cv::Rect> strayingRects2;
     DiffResult() { }
-    DiffResult(const vector<PixelMatchingResult>& matches, const vector<Rect>& strayingRects1, const vector<Rect>& strayingRects2) {
+    DiffResult(const std::vector<PixelMatchingResult>& matches, const std::vector<cv::Rect>& strayingRects1, const std::vector<cv::Rect>& strayingRects2) {
       this->matches = matches;
       this->strayingRects1 = strayingRects1;
       this->strayingRects2 = strayingRects2;
     }
   };
 
-  void detectDiff(const Mat &img1, const Mat &img2, DiffResult& out, const DiffConfig &config);
+  void detectDiff(const cv::Mat &img1, const cv::Mat &img2, DiffResult& out, const DiffConfig &config);
 }
 
 #endif
