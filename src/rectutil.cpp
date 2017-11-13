@@ -178,7 +178,9 @@ namespace ph {
         for (int sy = -dr; sy <= dr; ++sy) {
           auto imgr1 = img1(r1);
           auto imgr2 = img2(shift(r2, sx, sy));
-          auto diff = imgr1 != imgr2;
+          Mat diff;
+          bitwise_xor(imgr1, imgr2, diff);
+          cvtColor(diff, diff, COLOR_RGB2GRAY);
           if (countNonZero(diff) == 0) {
             roi1 = imgr1;
             roi2 = imgr2;
