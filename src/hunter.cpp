@@ -15,21 +15,6 @@ namespace ph {
     cout << r.x << ", " << r.y << ", " << r.x + r.width << ", " << r.y + r.height << endl;
   }
 
-  struct PixelMatchingResult {
-    bool isMatched;
-    Point2i translate;
-    vector<Rect> boundingMarkers1;
-    vector<Rect> boundingMarkers2;
-    PixelMatchingResult() {
-      this->isMatched = true;
-    }
-    PixelMatchingResult(const vector<Rect>& boundingMarkers1, const vector<Rect>& boundingMarkers2) {
-      this->isMatched = false;
-      this->boundingMarkers1 = boundingMarkers1;
-      this->boundingMarkers2 = boundingMarkers2;
-    }
-  };
-
   struct Tension {
     int x1;
     int y1;
@@ -101,7 +86,7 @@ namespace ph {
   }
 
   void arroundDiffMatch(const Mat& img1, const Rect& r1, const Mat& img2, const Rect& r2, const Tension& db, 
-      const Point2i& sv, vector<Rect>& outRects, Tension& updatedDb) {
+      const Point2i& sv, vector<Rect>& outRects, Tension& updatedDb, const DiffConfig& config) {
     int grid = 32; // TODO
     int norm = 10; // TODO 
     auto arroundDiffRects = vector<Rect>();
@@ -250,7 +235,7 @@ namespace ph {
   }
 
   void pixelMatch(const Mat& img1, const vector<Rect>& matchedRects1, const Mat& img2, const vector<Rect>& matchedRects2, const vector<Point2i>& cv,
-      vector<PixelMatchingResult>& out, vector<Rect>& updatedRects1, vector<Rect>& updatedRects2) {
+      vector<PixelMatchingResult>& out, vector<Rect>& updatedRects1, vector<Rect>& updatedRects2, const DiffConfig& config) {
     auto rects1 = rectu::copy(matchedRects1);
     auto rects2 = rectu::copy(matchedRects2);
     auto result = vector<PixelMatchingResult>();
@@ -287,45 +272,45 @@ namespace ph {
           );
       Tension dbx;
       vector<Rect> outerRects;
-      cout << "r1: ";
-      debugRect(r1);
-      cout << "eb1: ";
-      debugRect(eb1);
-      cout << "r2: ";
-      debugRect(r2);
-      cout << "eb2: ";
-      debugRect(eb2);
-      cout << "db: ";
-      debugTension(db);
-      arroundDiffMatch(img1, r1, img2, r2, db, sv, outerRects, dbx);
+      if (config.debug) {
+        cout << "Target rect1: ";
+        debugRect(r1);
+        cout << "Expanded rect1 : ";
+        debugRect(eb1);
+        cout << "Target rect2: ";
+        debugRect(r2);
+        cout << "Expanded rect2 : ";
+        debugRect(eb2);
+        cout << "Expansion limitation: ";
+        debugTension(db);
+      }
+      arroundDiffMatch(img1, r1, img2, r2, db, sv, outerRects, dbx, config);
       // cout << "dbx: ";
       // debugTension(dbx);
 
+      auto updatedR1 = Rect(Point2i(r1.tl().x - dbx.x1, r1.tl().y - dbx.y1), Point2i(r1.br().x + dbx.x2, r1.br().y + dbx.y2)); 
+      auto updatedR2 = Rect(Point2i(r2.tl().x - dbx.x1, r2.tl().y - dbx.y1), Point2i(r2.br().x + dbx.x2, r2.br().y + dbx.y2));
       if (innerRects.size() > 0 && outerRects.size() == 0) {
         vector<Rect> s1, s2;
-        cout << "inner diff" << endl;
         rectu::shiftRects(innerRects, s1, r1.x, r1.y);
         rectu::shiftRects(innerRects, s2, r2.x, r2.y);
-        result.push_back(PixelMatchingResult(s1, s2));
+        result.push_back(PixelMatchingResult(updatedR1, updatedR2, s1, s2));
       } else if (innerRects.size() == 0 && outerRects.size() > 0) {
         vector<Rect> s1, s2;
-        cout << "outer diff" << endl;
         rectu::shiftRects(outerRects, s1, r1.x, r1.y);
         rectu::shiftRects(outerRects, s2, r2.x, r2.y);
-        result.push_back(PixelMatchingResult(s1, s2));
+        result.push_back(PixelMatchingResult(updatedR1, updatedR2, s1, s2));
       } else if (innerRects.size() > 0 && outerRects.size() > 0) {
         vector<Rect> s1, s2;
-        cout << "inner and outer diff" << endl;
         copy(outerRects.begin(), outerRects.end(), back_inserter(innerRects));
         rectu::shiftRects(innerRects, s1, r1.x, r1.y);
         rectu::shiftRects(innerRects, s2, r2.x, r2.y);
-        result.push_back(PixelMatchingResult(s1, s2));
+        result.push_back(PixelMatchingResult(updatedR1, updatedR2, s1, s2));
       } else {
-        cout << "not diff" << endl;
-        result.push_back(PixelMatchingResult());
+        result.push_back(PixelMatchingResult(updatedR1, updatedR2));
       }
-      rects1.at(i) = Rect(Point2i(r1.tl().x - dbx.x1, r1.tl().y - dbx.y1), Point2i(r1.br().x + dbx.x2, r1.br().y + dbx.y2));
-      rects2.at(i) = Rect(Point2i(r2.tl().x - dbx.x1, r2.tl().y - dbx.y1), Point2i(r2.br().x + dbx.x2, r2.br().y + dbx.y2));
+      rects1.at(i) = updatedR1;
+      rects2.at(i) = updatedR2;
       // cout << "updated r1: ";
       // debugRect(rects1.at(i));
       // cout << "updated r2: ";
@@ -336,7 +321,7 @@ namespace ph {
     updatedRects2 = rects2;
   }
 
-  void detectDiff(const Mat &img1, const Mat &img2, const DiffdetectConfig &config) {
+  void detectDiff(const Mat& img1, const Mat& img2, DiffResult& out, const DiffConfig& config) {
     auto imgIn1 = Mat(), imgIn2 = Mat();
     Canny(img1, imgIn1, 10, 40);
     Canny(img2, imgIn2, 10, 40);
@@ -447,26 +432,13 @@ namespace ph {
 
     vector<PixelMatchingResult> matchingResults;
     vector<Rect> urects1, urects2;
-    pixelMatch(img1, matchedRects1, img2, matchedRects2, cv, matchingResults, urects1, urects2);
+    pixelMatch(img1, matchedRects1, img2, matchedRects2, cv, matchingResults, urects1, urects2, config);
 
-    auto outImg1 = img1.clone();
-    auto outImg2 = img2.clone();
+    auto strayingRects1 = vector<Rect>();
+    auto strayingRects2 = vector<Rect>();
+    DiffResult result(matchingResults, strayingRects1, strayingRects2);
 
-    rectu::drawRects(outImg1, matchedRects1, Scalar(0, 255, 0), 1);
-    rectu::drawRects(outImg1, urects1, Scalar(200, 200, 100), 1);
-    rectu::drawRects(outImg2, matchedRects2, Scalar(0, 255, 0), 1);
-    rectu::drawRects(outImg2, urects2, Scalar(200, 200, 100), 1);
-
-    for (auto& pr: matchingResults) {
-      if (!pr.isMatched) {
-        rectu::drawRects(outImg1, pr.boundingMarkers1, Scalar(0, 0, 255), 1);
-        rectu::drawRects(outImg2, pr.boundingMarkers2, Scalar(0, 0, 255), 1);
-      }
-    }
-
-    imshow("rects1", outImg1);
-    imshow("rects2", outImg2);
-    waitKey(0);
+    out = result;
   }
 }
 

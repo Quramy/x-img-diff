@@ -9,23 +9,53 @@ using namespace cv;
 
 namespace ph {
 
-  class DiffdetectConfig {
-    public:
-      bool debug = true;
-      DiffdetectConfig() {
-        this->debug = true;
-      }
-  };
-
-  struct DiffResult {
-    vector<Rect> diffRects = vector<Rect>();
-    vector<Rect> matchedRects = vector<Rect>();
-    DiffResult() {
+  struct DiffConfig {
+    bool debug = false;
+    int maxMatchingPoints = 400;
+    int shiftDelta = 2;
+    int connectionDistance = 60;
+    int thresholdPixcelNorm = 10;
+    DiffConfig() {
     }
   };
 
-  void detectDiff(const Mat &img1, const Mat &img2, const DiffdetectConfig &config);
-}
+  struct PixelMatchingResult {
+    bool isMatched;
+    Point2i translate;
+    Rect bounding1;
+    Rect bounding2;
+    vector<Rect> diffMarkers1;
+    vector<Rect> diffMarkers2;
+    PixelMatchingResult() {
+      this->isMatched = true;
+    }
+    PixelMatchingResult(const Rect& bounding1, const Rect& bounding2) {
+      this->isMatched = true;
+      this->bounding1 = bounding1;
+      this->bounding2 = bounding2;
+    }
+    PixelMatchingResult(const Rect& bounding1, const Rect& bounding2, const vector<Rect>& diffMarkers1, const vector<Rect>& diffMarkers2) {
+      this->isMatched = false;
+      this->bounding1 = bounding1;
+      this->bounding2 = bounding2;
+      this->diffMarkers1 = diffMarkers1;
+      this->diffMarkers2 = diffMarkers2;
+    }
+  };
 
+  struct DiffResult {
+    vector<PixelMatchingResult> matches;
+    vector<Rect> strayingRects1;
+    vector<Rect> strayingRects2;
+    DiffResult() { }
+    DiffResult(const vector<PixelMatchingResult>& matches, const vector<Rect>& strayingRects1, const vector<Rect>& strayingRects2) {
+      this->matches = matches;
+      this->strayingRects1 = strayingRects1;
+      this->strayingRects2 = strayingRects2;
+    }
+  };
+
+  void detectDiff(const Mat &img1, const Mat &img2, DiffResult& out, const DiffConfig &config);
+}
 
 #endif
