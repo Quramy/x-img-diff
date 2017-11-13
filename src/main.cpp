@@ -53,15 +53,22 @@ int main(int argc, char* argv[], char* envp[]) {
 
   auto outImg1 = img1.clone();
   auto outImg2 = img2.clone();
+  auto irects1 = vector<Rect>(), irects2 = vector<Rect>();
   auto urects1 = vector<Rect>(), urects2 = vector<Rect>();
   for (auto& pr: result.matches) {
+    irects1.push_back(pr.center1);
     urects1.push_back(pr.bounding1);
+    irects2.push_back(pr.center2);
     urects2.push_back(pr.bounding2);
     if (!pr.isMatched) {
       ph::rectu::drawRects(outImg1, pr.diffMarkers1, Scalar(0, 0, 255), 1);
       ph::rectu::drawRects(outImg2, pr.diffMarkers2, Scalar(0, 0, 255), 1);
     }
   }
+  ph::rectu::drawRects(outImg1, result.strayingRects1, Scalar(200, 100, 200), 1);
+  ph::rectu::drawRects(outImg2, result.strayingRects2, Scalar(200, 100, 200), 1);
+  ph::rectu::drawRects(outImg1, irects1, Scalar(0, 255, 0), 1);
+  ph::rectu::drawRects(outImg2, irects2, Scalar(0, 255, 0), 1);
   ph::rectu::drawRects(outImg1, urects1, Scalar(200, 200, 100), 1);
   ph::rectu::drawRects(outImg2, urects2, Scalar(200, 200, 100), 1);
   Mat outImg;

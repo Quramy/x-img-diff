@@ -15,6 +15,7 @@ namespace ph {
     int shiftDelta = 2;
     int connectionDistance = 60;
     int thresholdPixcelNorm = 10;
+    int gridSize = 32;
     DiffConfig() {
     }
   };
@@ -22,21 +23,29 @@ namespace ph {
   struct PixelMatchingResult {
     bool isMatched;
     Point2i translate;
+    Rect center1;
     Rect bounding1;
+    Rect center2;
     Rect bounding2;
     vector<Rect> diffMarkers1;
     vector<Rect> diffMarkers2;
     PixelMatchingResult() {
       this->isMatched = true;
     }
-    PixelMatchingResult(const Rect& bounding1, const Rect& bounding2) {
+    PixelMatchingResult(const Rect& center1, const Rect& bounding1, const Rect& center2,  const Rect& bounding2) {
       this->isMatched = true;
+      this->center1 = center1;
       this->bounding1 = bounding1;
+      this->center2 = center2;
       this->bounding2 = bounding2;
     }
-    PixelMatchingResult(const Rect& bounding1, const Rect& bounding2, const vector<Rect>& diffMarkers1, const vector<Rect>& diffMarkers2) {
+    PixelMatchingResult(
+        const Rect& center1, const Rect& bounding1, const vector<Rect>& diffMarkers1,
+        const Rect& center2, const Rect& bounding2, const vector<Rect>& diffMarkers2) {
       this->isMatched = false;
+      this->center1 = center1;
       this->bounding1 = bounding1;
+      this->center2 = center2;
       this->bounding2 = bounding2;
       this->diffMarkers1 = diffMarkers1;
       this->diffMarkers2 = diffMarkers2;

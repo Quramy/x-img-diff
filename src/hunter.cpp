@@ -12,7 +12,7 @@ using namespace cv;
 namespace ph {
 
   void debugRect(const Rect& r) {
-    cout << r.x << ", " << r.y << ", " << r.x + r.width << ", " << r.y + r.height << endl;
+    cout << r.x << ", " << r.y << ", " << r.x + r.width << ", " << r.y + r.height << "(" << r.width << "x" << r.height << ")" << endl;
   }
 
   struct Tension {
@@ -30,7 +30,7 @@ namespace ph {
   };
 
   void debugTension(const Tension& t) {
-    cout << t.x1 << ", " << t.y1 << ", " << t.x2 << "," << t.y2 << endl;
+    cout << t.x1 << ", " << t.y1 << ", " << t.x2 << ", " << t.y2 << endl;
   }
 
   vector<vector<DMatch>> matchKps(const Mat& des1, const Mat& des2) {
@@ -75,6 +75,26 @@ namespace ph {
     for (int i = 0; i < centers.rows; ++i) {
       Point2i p((int)(round(centers.at<float>(i, 4) / dxw)), (int)round((centers.at<float>(i, 5) / dyw)));
       qdc.push_back(p);
+    }
+  }
+
+  void clusterKeyPoints(const vector<KeyPoint>& kplist, vector<vector<KeyPoint>>& out, const int n) {
+    Mat v(kplist.size(), 2, CV_32FC1);
+    int wy = 10.0; // TODO
+    int k = min((int)(kplist.size() / 3), n);
+    for (int i = 0; i < kplist.size(); ++i) {
+      auto& kp = kplist.at(i);
+      v.at<float>(i, 0) = kp.pt.x;
+      v.at<float>(i, 1) = kp.pt.y * wy;
+    }
+    auto criteria = cvTermCriteria(CV_TERMCRIT_EPS|CV_TERMCRIT_ITER, 10, 1.0);
+    Mat centers;
+    Mat clusters = Mat::zeros(v.rows, 1, CV_32SC1);
+    kmeans(v, k, clusters, criteria, 10, KMEANS_PP_CENTERS, centers);
+    out = vector<vector<KeyPoint>>(k);
+    for (int i = 0; i < clusters.rows; ++i) {
+      int l = clusters.at<int>(i);
+      out.at(l).push_back(kplist.at(i));
     }
   }
 
@@ -234,33 +254,31 @@ namespace ph {
     outRects = arroundDiffRects;
   }
 
-  void pixelMatch(const Mat& img1, const vector<Rect>& matchedRects1, const Mat& img2, const vector<Rect>& matchedRects2, const vector<Point2i>& cv,
+  int pixelMatch(const Mat& img1, const vector<Rect>& matchedRects1, const Mat& img2, const vector<Rect>& matchedRects2, const vector<Point2i>& cv,
       vector<PixelMatchingResult>& out, vector<Rect>& updatedRects1, vector<Rect>& updatedRects2, const DiffConfig& config) {
     auto rects1 = rectu::copy(matchedRects1);
     auto rects2 = rectu::copy(matchedRects2);
     auto result = vector<PixelMatchingResult>();
+    int ret = 0;
     for (int i = 0; i < cv.size(); ++i) {
       // cout << "pixelMatch iterate: " << i << endl;
       auto& r1 = rects1.at(i);
       auto& r2 = rects2.at(i);
+      if (r1.width > r2.width) {
+        r1.width = r2.width;
+      } else if (r1.width < r2.width) {
+        r2.width = r1.width;
+      }
+      if (r1.height > r2.height) {
+        r1.height = r2.height;
+      } else if (r1.height < r2.height) {
+        r2.height = r1.height;
+      }
       auto& center = cv.at(i);
       vector<Rect> innerRects;
       Mat imgr1, imgr2;
       Point2i sv;
       int shiftDelta = 2; //TODO
-      if (!rectu::allClose(img1, r1, img2, r2, imgr1, imgr2, sv, shiftDelta)) {
-        Mat diffImg;
-        int thresholdPixelNorm = 10;
-        // cout << "r1: " << r1.width << "x" << r1.height << endl;
-        // cout << "r2: " << r2.width << "x" << r2.height << endl;
-        binaryDiff(img1(r1), img2(r2), diffImg, thresholdPixelNorm);
-        vector<Rect> x;
-        rectu::nonzeroRects(diffImg, 32, 32, x);
-        rectu::mergeRects(x, innerRects, 32);
-      } else {
-        innerRects = vector<Rect>(0);
-      }
-
       Rect eb1, eb2;
       rectu::expand(rects1, i, img1.rows, img1.cols, eb1);
       rectu::expand(rects2, i, img2.rows, img2.cols, eb2);
@@ -284,9 +302,27 @@ namespace ph {
         cout << "Expansion limitation: ";
         debugTension(db);
       }
+
+      if (!rectu::allClose(img1, r1, img2, r2, imgr1, imgr2, sv, shiftDelta)) {
+        Mat diffImg;
+        int thresholdPixelNorm = 10;
+        // cout << "r1: " << r1.width << "x" << r1.height << endl;
+        // cout << "r2: " << r2.width << "x" << r2.height << endl;
+        binaryDiff(img1(r1), img2(r2), diffImg, thresholdPixelNorm);
+        vector<Rect> x;
+        rectu::nonzeroRects(diffImg, 32, 32, x);
+        rectu::mergeRects(x, innerRects, 32);
+      } else {
+        innerRects = vector<Rect>(0);
+      }
+
       arroundDiffMatch(img1, r1, img2, r2, db, sv, outerRects, dbx, config);
       // cout << "dbx: ";
       // debugTension(dbx);
+
+      if ( db.x1 == dbx.x1 && db.x2 == dbx.x2 && db.y1 == dbx.y1 && db.y2 == dbx.y2) {
+        ++ret;
+      }
 
       auto updatedR1 = Rect(Point2i(r1.tl().x - dbx.x1, r1.tl().y - dbx.y1), Point2i(r1.br().x + dbx.x2, r1.br().y + dbx.y2)); 
       auto updatedR2 = Rect(Point2i(r2.tl().x - dbx.x1, r2.tl().y - dbx.y1), Point2i(r2.br().x + dbx.x2, r2.br().y + dbx.y2));
@@ -294,20 +330,20 @@ namespace ph {
         vector<Rect> s1, s2;
         rectu::shiftRects(innerRects, s1, r1.x, r1.y);
         rectu::shiftRects(innerRects, s2, r2.x, r2.y);
-        result.push_back(PixelMatchingResult(updatedR1, updatedR2, s1, s2));
+        result.push_back(PixelMatchingResult(r1, updatedR1, s1, r2, updatedR2, s2));
       } else if (innerRects.size() == 0 && outerRects.size() > 0) {
         vector<Rect> s1, s2;
         rectu::shiftRects(outerRects, s1, r1.x, r1.y);
         rectu::shiftRects(outerRects, s2, r2.x, r2.y);
-        result.push_back(PixelMatchingResult(updatedR1, updatedR2, s1, s2));
+        result.push_back(PixelMatchingResult(r1, updatedR1, s1, r2, updatedR2, s2));
       } else if (innerRects.size() > 0 && outerRects.size() > 0) {
         vector<Rect> s1, s2;
         copy(outerRects.begin(), outerRects.end(), back_inserter(innerRects));
         rectu::shiftRects(innerRects, s1, r1.x, r1.y);
         rectu::shiftRects(innerRects, s2, r2.x, r2.y);
-        result.push_back(PixelMatchingResult(updatedR1, updatedR2, s1, s2));
+        result.push_back(PixelMatchingResult(r1, updatedR1, s1, r2, updatedR2, s2));
       } else {
-        result.push_back(PixelMatchingResult(updatedR1, updatedR2));
+        result.push_back(PixelMatchingResult(r1, updatedR1, r2, updatedR2));
       }
       rects1.at(i) = updatedR1;
       rects2.at(i) = updatedR2;
@@ -319,6 +355,7 @@ namespace ph {
     out = result;
     updatedRects1 = rects1;
     updatedRects2 = rects2;
+    return ret;
   }
 
   void detectDiff(const Mat& img1, const Mat& img2, DiffResult& out, const DiffConfig& config) {
@@ -414,7 +451,7 @@ namespace ph {
       notCategorizedKp2.push_back(kp);
     }
 
-    int distance = 60; // TODO
+    int distance = config.connectionDistance;
     auto matchedRects1 = vector<Rect>(), matchedRects2 = vector<Rect>();
     vector<Point2i> cv;
     rectu::createRectsFromKeypoints(categorizedKp1, matchedRects1);
@@ -432,10 +469,38 @@ namespace ph {
 
     vector<PixelMatchingResult> matchingResults;
     vector<Rect> urects1, urects2;
-    pixelMatch(img1, matchedRects1, img2, matchedRects2, cv, matchingResults, urects1, urects2, config);
+    int countOfExpandRects = pixelMatch(img1, matchedRects1, img2, matchedRects2, cv, matchingResults, urects1, urects2, config);
 
-    auto strayingRects1 = vector<Rect>();
-    auto strayingRects2 = vector<Rect>();
+    int rk = (cv.size() - countOfExpandRects) * 4;
+    if (config.debug) {
+      cout << "Initial cluster size[Strayng points]: " << rk << endl;
+    }
+    vector<Rect> strayingRects1, strayingRects2;
+    if (rk > 0) {
+      auto strayngPoints1 = vector<KeyPoint>();
+      for (auto& kp: notCategorizedKp1) {
+        if (!rectu::inBox(kp.pt, urects1)) {
+          strayngPoints1.push_back(kp);
+        }
+      }
+      auto strayngPoints2 = vector<KeyPoint>();
+      for (auto& kp: notCategorizedKp2) {
+        if (!rectu::inBox(kp.pt, urects2)) {
+          strayngPoints2.push_back(kp);
+        }
+      }
+      vector<vector<KeyPoint>> ckp1, ckp2;
+      clusterKeyPoints(strayngPoints1, ckp1, rk);
+      clusterKeyPoints(strayngPoints2, ckp2, rk);
+      rectu::createRectsFromKeypoints(ckp1, strayingRects1, true);
+      rectu::createRectsFromKeypoints(ckp2, strayingRects2, true);
+      rectu::mergeRects(strayingRects1, strayingRects1, config.gridSize);
+      rectu::mergeRects(strayingRects2, strayingRects2, config.gridSize);
+    } else {
+      strayingRects1 = vector<Rect>();
+      strayingRects2 = vector<Rect>();
+    }
+
     DiffResult result(matchingResults, strayingRects1, strayingRects2);
 
     out = result;
