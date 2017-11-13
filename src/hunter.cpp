@@ -278,7 +278,7 @@ namespace ph {
       vector<Rect> innerRects;
       Mat imgr1, imgr2;
       Point2i sv;
-      int shiftDelta = 0; //TODO
+      int shiftDelta = 2; //TODO
       Rect eb1, eb2;
       rectu::expand(rects1, i, img1.rows, img1.cols, eb1);
       rectu::expand(rects2, i, img2.rows, img2.cols, eb2);
