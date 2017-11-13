@@ -1,6 +1,14 @@
 # x-img-diff
 Compare two image using [OpenCV](https://docs.opencv.org/3.3.0/) local features matching.
 
+```
+ximgdiff example/img/after.png example/img/before.png out.png
+```
+![](example/img/after.png)
+![](example/img/before.png)
+
+![](example/img/out.png)
+
 ## Usage
 
 ```text
