@@ -3,7 +3,7 @@
 #include <vector>
 #include <set>
 #include <opencv2/opencv.hpp>
-#include "rectutil/rectutil.hpp"
+#include "rectutil.hpp"
 #include "hunter.hpp"
 
 using namespace std;

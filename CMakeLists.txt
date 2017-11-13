@@ -29,8 +29,7 @@ find_package( OpenCV REQUIRED )
 
 set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wno-unknown-pragmas -Wno-sign-compare -Woverloaded-virtual -Wwrite-strings -Wno-unused")
 
+add_library(hunter_lib STATIC src/hunter.cpp src/rectutil.cpp)
 
-add_library(hunter_lib STATIC hunter/hunter.cpp hunter/rectutil/rectutil.cpp)
-
-add_executable(main hunter/main.cpp)
-target_link_libraries(main ${OpenCV_LIBS} hunter_lib)
+add_executable(ximgdiff src/main.cpp)
+target_link_libraries(ximgdiff ${OpenCV_LIBS} hunter_lib)
