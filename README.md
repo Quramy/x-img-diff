@@ -4,10 +4,14 @@ Compare two image using [OpenCV](https://docs.opencv.org/3.3.0/) local features 
 ```
 ximgdiff example/img/after.png example/img/before.png out.png
 ```
-![](example/img/after.png)
-![](example/img/before.png)
 
-![](example/img/out.png)
+| after.png | before.png |
+| :--: | :--: |
+| <img src="example/img/after.png" width="45%" /> | <img src="example/img/before.png" width="45%" /> |
+
+| out.png |
+| :--: |
+| <img src="example/img/out.png" width="80%" > |
 
 ## Usage
 
