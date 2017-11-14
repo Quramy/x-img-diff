@@ -78,10 +78,13 @@ namespace ph {
     }
   }
 
-  void clusterKeyPoints(const vector<KeyPoint>& kplist, vector<vector<KeyPoint>>& out, const int n) {
+  bool clusterKeyPoints(const vector<KeyPoint>& kplist, vector<vector<KeyPoint>>& out, const int n) {
     Mat v(kplist.size(), 2, CV_32FC1);
     int wy = 10.0; // TODO
     int k = min((int)(kplist.size() / 3), n);
+    if (k > kplist.size() + 10) {
+      return false;
+    }
     for (int i = 0; i < kplist.size(); ++i) {
       auto& kp = kplist.at(i);
       v.at<float>(i, 0) = kp.pt.x;
@@ -96,6 +99,7 @@ namespace ph {
       int l = clusters.at<int>(i);
       out.at(l).push_back(kplist.at(i));
     }
+    return true;
   }
 
   void binaryDiff(const Mat& roi1, const Mat& roi2, Mat& out, int tpn) {
@@ -489,12 +493,18 @@ namespace ph {
       }
     }
     vector<vector<KeyPoint>> ckp1, ckp2;
-    clusterKeyPoints(strayngPoints1, ckp1, rk);
-    clusterKeyPoints(strayngPoints2, ckp2, rk);
-    rectu::createRectsFromKeypoints(ckp1, strayingRects1, true);
-    rectu::createRectsFromKeypoints(ckp2, strayingRects2, true);
-    rectu::mergeRects(strayingRects1, strayingRects1, 8);
-    rectu::mergeRects(strayingRects2, strayingRects2, 8);
+    if (clusterKeyPoints(strayngPoints1, ckp1, rk)) {
+      rectu::createRectsFromKeypoints(ckp1, strayingRects1, true);
+      rectu::mergeRects(strayingRects1, strayingRects1, 8);
+    } else {
+      strayingRects1 = vector<Rect>();
+    }
+    if (clusterKeyPoints(strayngPoints2, ckp2, rk)) {
+      rectu::createRectsFromKeypoints(ckp2, strayingRects2, true);
+      rectu::mergeRects(strayingRects2, strayingRects2, 8);
+    } else {
+      strayingRects2 = vector<Rect>();
+    }
 
     DiffResult result(matchingResults, strayingRects1, strayingRects2);
 
