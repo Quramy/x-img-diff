@@ -82,7 +82,7 @@ namespace ph {
     Mat v(kplist.size(), 2, CV_32FC1);
     int wy = 10.0; // TODO
     int k = min((int)(kplist.size() / 3), n);
-    if (k > kplist.size() + 10) {
+    if (k > kplist.size() || kplist.size() <= 2) {
       return false;
     }
     for (int i = 0; i < kplist.size(); ++i) {
