@@ -363,14 +363,13 @@ namespace ph {
   }
 
   void detectDiff(const Mat& img1, const Mat& img2, DiffResult& out, const DiffConfig& config) {
-    auto imgIn1 = Mat(), imgIn2 = Mat();
+    Mat imgIn1, imgIn2;
     Canny(img1, imgIn1, 10, 40);
     Canny(img2, imgIn2, 10, 40);
 
     auto akaze = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.001f, 4, 4, KAZE::DIFF_PM_G2);
     vector<KeyPoint> kp1, kp2;
-    auto mask = Mat();
-    Mat des1, des2;
+    Mat des1, des2, mask;
     akaze->detectAndCompute(imgIn1, mask, kp1, des1);
     akaze->detectAndCompute(imgIn2, mask, kp2, des2);
 
@@ -384,7 +383,7 @@ namespace ph {
     auto matches = matchKps(des1, des2);
     const int MAX_X_DIST = 400; // TODO
     const int fmax = 400; // TODO
-    auto filteredMatches = vector<vector<DMatch>>();
+    vector<vector<DMatch>> filteredMatches;
     for (auto& mv: matches) {
       if (abs(kp1.at(mv.at(0).queryIdx).pt.x - kp2.at(mv.at(0).trainIdx).pt.x) < MAX_X_DIST) {
         filteredMatches.push_back(mv);
@@ -397,8 +396,8 @@ namespace ph {
       if (config.debug) {
         cout << "Sampling to:" << fmax << endl;
       }
-      auto xxx = vector<vector<DMatch>>();
-      auto l = filteredMatches.size();
+      vector<vector<DMatch>> xxx;
+      int l = filteredMatches.size();
       for (int i = 0; i < fmax; ++i) {
         int ni = i * l / fmax;
         xxx.push_back(filteredMatches[ni]);
@@ -406,7 +405,6 @@ namespace ph {
       filteredMatches = xxx;
     }
 
-    auto qdVec = vector<pair<int, int>>();
     set<int> s{};
     for (auto& m: filteredMatches) {
       auto& kpt1 = kp1.at(m.at(0).queryIdx);
@@ -416,7 +414,6 @@ namespace ph {
       s.insert(dx);
       s.insert(dy);
       auto p = make_pair(dx, dy);
-      qdVec.push_back(p);
     }
     int n = s.size() + 1;
     if (config.debug) {
@@ -456,7 +453,7 @@ namespace ph {
     }
 
     int distance = config.connectionDistance;
-    auto matchedRects1 = vector<Rect>(), matchedRects2 = vector<Rect>();
+    vector<Rect> matchedRects1, matchedRects2;
     vector<Point2i> cv;
     rectu::createRectsFromKeypoints(categorizedKp1, matchedRects1);
     rectu::mergeRectsIfSameCenter(matchedRects1, qdc, matchedRects1, cv, distance);
