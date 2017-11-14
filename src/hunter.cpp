@@ -363,7 +363,7 @@ namespace ph {
     Canny(img1, imgIn1, 10, 40);
     Canny(img2, imgIn2, 10, 40);
 
-    auto akaze = AKAZE::create();
+    auto akaze = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.001f, 4, 4, KAZE::DIFF_PM_G2);
     vector<KeyPoint> kp1, kp2;
     auto mask = Mat();
     Mat des1, des2;
