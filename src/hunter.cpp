@@ -15,6 +15,43 @@ namespace ph {
     cout << r.x << ", " << r.y << ", " << r.x + r.width << ", " << r.y + r.height << "(" << r.width << "x" << r.height << ")" << endl;
   }
 
+  DiffConfig::DiffConfig() {
+  }
+
+  PixelMatchingResult::PixelMatchingResult() {
+    this->isMatched = true;
+  }
+
+  PixelMatchingResult::PixelMatchingResult(const Rect& center1, const Rect& bounding1, const Rect& center2,  const Rect& bounding2) {
+    this->isMatched = true;
+    this->center1 = center1;
+    this->bounding1 = bounding1;
+    this->center2 = center2;
+    this->bounding2 = bounding2;
+  }
+
+  PixelMatchingResult::PixelMatchingResult(
+      const Rect& center1, const Rect& bounding1, const vector<Rect>& diffMarkers1,
+      const Rect& center2, const Rect& bounding2, const vector<Rect>& diffMarkers2
+      ) {
+    this->isMatched = false;
+    this->center1 = center1;
+    this->bounding1 = bounding1;
+    this->center2 = center2;
+    this->bounding2 = bounding2;
+    this->diffMarkers1 = diffMarkers1;
+    this->diffMarkers2 = diffMarkers2;
+  }
+
+  DiffResult::DiffResult() {
+  }
+
+  DiffResult::DiffResult(const vector<PixelMatchingResult>& matches, const vector<cv::Rect>& strayingRects1, const vector<cv::Rect>& strayingRects2) {
+    this->matches = matches;
+    this->strayingRects1 = strayingRects1;
+    this->strayingRects2 = strayingRects2;
+  }
+
   struct Tension {
     int x1;
     int y1;
