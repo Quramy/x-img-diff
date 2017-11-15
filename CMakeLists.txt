@@ -33,3 +33,5 @@ add_library(hunter_lib STATIC src/hunter.cpp src/rectutil.cpp)
 
 add_executable(ximgdiff src/main.cpp)
 target_link_libraries(ximgdiff ${OpenCV_LIBS} hunter_lib)
+
+install(TARGETS ximgdiff DESTINATION bin)

@@ -42,7 +42,7 @@ ximgdiff example/img/after.png example/img/before.png out.png
 ```sh
 mkdir build; cd build
 cmake ..
-make
+make install
 ```
 
 ## License
