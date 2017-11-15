@@ -12,6 +12,9 @@ int main(int argc, char* argv[], char* envp[]) {
   args::ArgumentParser parser("Compare two images");
   args::HelpFlag help(parser, "help", "Display this help menu.", {'h', "help"});
   args::Flag verbose(parser, "verbose", "Display debug logging messages.", {'v', "verbose"});
+  args::ValueFlag<int> shiftDelta(parser, "integer", "Minimal translation distance in matching each area.", {"shift-delta"});
+  args::ValueFlag<int> maxMatchingPoints(parser, "integer", "Maximum value of matching points in clustering.", {"max-matching-points"});
+  args::Flag noCanny(parser, "noCanny", "Disable preprocess using Canny filter.", {"no-canny"});
   args::Positional<string> actual(parser, "actual", "Actual image path");
   args::Positional<string> expected(parser, "expected", "Expected image path");
   args::Positional<string> outPath(parser, "out", "Output image path");
@@ -47,6 +50,9 @@ int main(int argc, char* argv[], char* envp[]) {
   auto conf = ph::DiffConfig();
 
   conf.debug = verbose;
+  conf.useCanny = !noCanny;
+  if (shiftDelta) conf.shiftDelta = args::get(shiftDelta);
+  if (maxMatchingPoints) conf.maxMatchingPoints = args::get(maxMatchingPoints);
 
   ph::DiffResult result;
   ph::detectDiff(img1, img2, result, conf);

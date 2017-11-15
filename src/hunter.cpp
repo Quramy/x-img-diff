@@ -117,7 +117,7 @@ namespace ph {
 
   bool clusterKeyPoints(const vector<KeyPoint>& kplist, vector<vector<KeyPoint>>& out, const int n) {
     Mat v(kplist.size(), 2, CV_32FC1);
-    int wy = 10.0; // TODO
+    int wy = 10.0;
     int k = min((int)(kplist.size() / 3), n);
     if (k > kplist.size() || kplist.size() <= 2) {
       return false;
@@ -148,8 +148,8 @@ namespace ph {
 
   void arroundDiffMatch(const Mat& img1, const Rect& r1, const Mat& img2, const Rect& r2, const Tension& db, 
       const Point2i& sv, vector<Rect>& outRects, Tension& updatedDb, const DiffConfig& config) {
-    int grid = 32; // TODO
-    int norm = 10; // TODO 
+    const int grid = config.gridSize;
+    const int norm = config.thresholdPixelNorm;
     auto arroundDiffRects = vector<Rect>();
     int gix1 = 0, gix2 = 0, giy1 = 0, giy2 = 0;
     int gox1 = 0, gox2 = 0, goy1 = 0, goy2 = 0;
@@ -301,6 +301,8 @@ namespace ph {
     auto rects2 = rectu::copy(matchedRects2);
     auto result = vector<PixelMatchingResult>();
     int ret = 0;
+    const int thresholdPixelNorm = config.thresholdPixelNorm;
+    const int gridSize = config.gridSize;
     for (int i = 0; i < cv.size(); ++i) {
       // cout << "pixelMatch iterate: " << i << endl;
       auto& r1 = rects1.at(i);
@@ -319,7 +321,7 @@ namespace ph {
       vector<Rect> innerRects;
       Mat imgr1, imgr2;
       Point2i sv;
-      int shiftDelta = 2; //TODO
+      const int shiftDelta = config.shiftDelta;
       Rect eb1, eb2;
       rectu::expand(rects1, i, img1.rows, img1.cols, eb1);
       rectu::expand(rects2, i, img2.rows, img2.cols, eb2);
@@ -346,20 +348,15 @@ namespace ph {
 
       if (!rectu::allClose(img1, r1, img2, r2, imgr1, imgr2, sv, shiftDelta)) {
         Mat diffImg;
-        int thresholdPixelNorm = 10;
-        // cout << "r1: " << r1.width << "x" << r1.height << endl;
-        // cout << "r2: " << r2.width << "x" << r2.height << endl;
         binaryDiff(img1(r1), img2(r2), diffImg, thresholdPixelNorm);
         vector<Rect> x;
-        rectu::nonzeroRects(diffImg, 32, 32, x);
-        rectu::mergeRects(x, innerRects, 32);
+        rectu::nonzeroRects(diffImg, gridSize, gridSize, x);
+        rectu::mergeRects(x, innerRects, gridSize);
       } else {
         innerRects = vector<Rect>(0);
       }
 
       arroundDiffMatch(img1, r1, img2, r2, db, sv, outerRects, dbx, config);
-      // cout << "dbx: ";
-      // debugTension(dbx);
 
       if ( db.x1 == dbx.x1 && db.x2 == dbx.x2 && db.y1 == dbx.y1 && db.y2 == dbx.y2) {
         ++ret;
@@ -401,8 +398,13 @@ namespace ph {
 
   void detectDiff(const Mat& img1, const Mat& img2, DiffResult& out, const DiffConfig& config) {
     Mat imgIn1, imgIn2;
-    Canny(img1, imgIn1, 10, 40);
-    Canny(img2, imgIn2, 10, 40);
+    if (config.useCanny) {
+      Canny(img1, imgIn1, 10, 40);
+      Canny(img2, imgIn2, 10, 40);
+    } else {
+      imgIn1 = img1;
+      imgIn2 = img2;
+    }
 
     auto akaze = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.001f, 4, 4, KAZE::DIFF_PM_G2);
     vector<KeyPoint> kp1, kp2;
@@ -418,8 +420,8 @@ namespace ph {
     }
 
     auto matches = matchKps(des1, des2);
-    const int MAX_X_DIST = 400; // TODO
-    const int fmax = 400; // TODO
+    const int MAX_X_DIST = config.thresholdTransX;
+    const int fmax = config.maxMatchingPoints;
     vector<vector<DMatch>> filteredMatches;
     for (auto& mv: matches) {
       if (abs(kp1.at(mv.at(0).queryIdx).pt.x - kp2.at(mv.at(0).trainIdx).pt.x) < MAX_X_DIST) {
@@ -431,7 +433,7 @@ namespace ph {
     }
     if (filteredMatches.size() > fmax) {
       if (config.debug) {
-        cout << "Sampling to:" << fmax << endl;
+        cout << "Sample matches to:" << fmax << endl;
       }
       vector<vector<DMatch>> xxx;
       int l = filteredMatches.size();

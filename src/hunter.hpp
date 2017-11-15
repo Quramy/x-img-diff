@@ -8,10 +8,12 @@ namespace ph {
 
   struct DiffConfig {
     bool debug = false;
+    int thresholdTransX = 400;
     int maxMatchingPoints = 400;
+    bool useCanny = true;
     int shiftDelta = 2;
     int connectionDistance = 60;
-    int thresholdPixcelNorm = 10;
+    int thresholdPixelNorm = 10;
     int gridSize = 32;
     DiffConfig();
   };
