@@ -396,6 +396,43 @@ namespace ph {
     return ret;
   }
 
+  void mergeResultIfSameCenter(vector<PixelMatchingResult>& results, const vector<Point2i>& cv, vector<Point2i>& cvo) {
+    auto l = results.size();
+    auto connectedPairs = vector<vector<int>>(l);
+    for (int i = 0; i < l; ++i) {
+      auto& ri = results.at(i);
+      auto& cvi = cv.at(i);
+      for (int j = i + 1; j < l; ++j) {
+        auto& rj = results.at(j);
+        auto& cvj = cv.at(j);
+        if (cvi.x - cvj.x > 2 || cvi.x - cvj.x < -2 ||  cvi.y - cvj.y > 2 || cvi.y - cvj.y < -2) continue;
+        Rect c1, c2;
+        if (rectu::intersect(ri.bounding1, rj.bounding1, c1, 3) && rectu::intersect(ri.bounding2, rj.bounding2, c2, 3)) {
+          ri.bounding1 = c1;
+          ri.bounding2 = c2;
+          rj.bounding1 = c1;
+          rj.bounding2 = c2;
+          copy(ri.diffMarkers1.begin(), ri.diffMarkers1.end(), back_inserter(rj.diffMarkers1));
+          copy(ri.diffMarkers2.begin(), ri.diffMarkers2.end(), back_inserter(rj.diffMarkers2));
+          rectu::mergeRects(rj.diffMarkers1, rj.diffMarkers1, 3);
+          rectu::mergeRects(rj.diffMarkers2, rj.diffMarkers2, 3);
+          connectedPairs.at(i).push_back(j);
+        }
+      }
+    }
+    auto out = vector<PixelMatchingResult>();
+    auto cvoo = vector<Point2i>();
+    for (int i = 0; i < l; ++i) {
+      if (connectedPairs.at(i).size() == 0) {
+        results.at(i).isMatched = !(results.at(i).diffMarkers1.size() + results.at(i).diffMarkers2.size());
+        out.push_back(results.at(i));
+        cvoo.push_back(cv.at(i));
+      }
+    }
+    results = out;
+    cvo = cvoo;
+  }
+
   void detectDiff(const Mat& img1, const Mat& img2, DiffResult& out, const DiffConfig& config) {
     Mat imgIn1, imgIn2;
     if (config.useCanny) {
@@ -510,6 +547,7 @@ namespace ph {
     vector<PixelMatchingResult> matchingResults;
     vector<Rect> urects1, urects2;
     int countOfExpandRects = pixelMatch(img1, matchedRects1, img2, matchedRects2, cv, matchingResults, urects1, urects2, config);
+    mergeResultIfSameCenter(matchingResults, cv, cv);
 
     int rk = (cv.size() - countOfExpandRects) * 6 + 10;
     if (config.debug) {
@@ -535,8 +573,8 @@ namespace ph {
       Rect c;
       for (auto& r: strayingRects1) {
         bool x = true;
-        for (auto& ur: urects1) {
-          x = x && !rectu::intersect(ur, r, c);
+        for (auto& mr: matchingResults) {
+          x = x && !rectu::intersect(mr.bounding1, r, c);
         }
         if (x) {
           st.push_back(r);
@@ -552,8 +590,8 @@ namespace ph {
       Rect c;
       for (auto& r: strayingRects2) {
         bool x = true;
-        for (auto& ur: urects2) {
-          x = x && !rectu::intersect(ur, r, c);
+        for (auto& mr: matchingResults) {
+          x = x && !rectu::intersect(mr.bounding2, r, c);
         }
         if (x) {
           st.push_back(r);
