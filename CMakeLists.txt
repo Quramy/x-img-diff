@@ -5,7 +5,7 @@ enable_language(CXX)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 1)
-set(VERSION_PATCH 1)
+set(VERSION_PATCH 2)
 
 # detect operating system
 message(STATUS "We are on a ${CMAKE_SYSTEM_NAME} system")
