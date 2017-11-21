@@ -130,8 +130,8 @@ namespace ph {
       }
     }
 
-    void filterIntersections(const vector<Rect> inRects1, const vector<Rect> inRects2, const vector<Point2i> inCenters, 
-        vector<Rect> outRects1, vector<Rect> outRects2, vector<Point2i> outCenters) {
+    void filterIntersections(const vector<Rect>& inRects1, const vector<Rect>& inRects2, const vector<Point2i>& inCenters, 
+        vector<Rect>& outRects1, vector<Rect>& outRects2, vector<Point2i>& outCenters) {
       int size = inCenters.size();
       auto marked = vector<bool>(size, false);
       Rect c;

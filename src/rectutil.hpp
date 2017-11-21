@@ -15,8 +15,8 @@ namespace ph {
     void mergeRects(const std::vector<cv::Rect>& inputRects, std::vector<cv::Rect>& out, int threshold = 0);
     void mergeRectsIfSameCenter(const std::vector<cv::Rect>& inputRects, const std::vector<cv::Point2i>& centers, std::vector<cv::Rect>& out, std::vector<cv::Point2i>& cOut, int threshold = 0);
     int volume(const cv::Rect& rect);
-    void filterIntersections(const std::vector<cv::Rect> inRects1, const std::vector<cv::Rect> inRects2, const std::vector<cv::Point2i> inCenters, 
-        std::vector<cv::Rect> outRects1, std::vector<cv::Rect> outRects2, std::vector<cv::Point2i> outCenters);
+    void filterIntersections(const std::vector<cv::Rect>& inRects1, const std::vector<cv::Rect>& inRects2, const std::vector<cv::Point2i>& inCenters, 
+        std::vector<cv::Rect>& outRects1, std::vector<cv::Rect>& outRects2, std::vector<cv::Point2i>& outCenters);
     bool allClose(const cv::Mat& img1, const cv::Rect& r1, const cv::Mat& img2, const cv::Rect& r2,
         cv::Mat& roi1, cv::Mat& roi2, cv::Point2i& sv, int dr = 2);
     bool allCloseWithShift(const cv::Mat& img1, const cv::Rect& r1, const cv::Mat& img2, const cv::Rect& r2, const cv::Point2i& sv);
