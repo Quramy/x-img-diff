@@ -531,13 +531,35 @@ namespace ph {
     vector<vector<KeyPoint>> ckp1, ckp2;
     if (clusterKeyPoints(strayngPoints1, ckp1, rk)) {
       rectu::createRectsFromKeypoints(ckp1, strayingRects1, true);
+      auto st = vector<Rect>();
+      Rect c;
+      for (auto& r: strayingRects1) {
+        bool x = true;
+        for (auto& ur: urects1) {
+          x = x && !rectu::intersect(ur, r, c);
+        }
+        if (x) {
+          st.push_back(r);
+        }
+      }
       rectu::mergeRects(strayingRects1, strayingRects1, 8);
     } else {
       strayingRects1 = vector<Rect>();
     }
     if (clusterKeyPoints(strayngPoints2, ckp2, rk)) {
       rectu::createRectsFromKeypoints(ckp2, strayingRects2, true);
-      rectu::mergeRects(strayingRects2, strayingRects2, 8);
+      auto st = vector<Rect>();
+      Rect c;
+      for (auto& r: strayingRects2) {
+        bool x = true;
+        for (auto& ur: urects2) {
+          x = x && !rectu::intersect(ur, r, c);
+        }
+        if (x) {
+          st.push_back(r);
+        }
+      }
+      rectu::mergeRects(st, strayingRects2, 8);
     } else {
       strayingRects2 = vector<Rect>();
     }
