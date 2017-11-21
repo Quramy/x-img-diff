@@ -73,8 +73,8 @@ int main(int argc, char* argv[], char* envp[]) {
   }
   ph::rectu::drawRects(outImg1, result.strayingRects1, Scalar(200, 100, 200), 2);
   ph::rectu::drawRects(outImg2, result.strayingRects2, Scalar(200, 100, 200), 2);
-  ph::rectu::drawRects(outImg1, irects1, Scalar(0, 255, 0), 1);
-  ph::rectu::drawRects(outImg2, irects2, Scalar(0, 255, 0), 1);
+  // ph::rectu::drawRects(outImg1, irects1, Scalar(0, 255, 0), 1);
+  // ph::rectu::drawRects(outImg2, irects2, Scalar(0, 255, 0), 1);
   ph::rectu::drawRects(outImg1, urects1, Scalar(200, 200, 100), 1);
   ph::rectu::drawRects(outImg2, urects2, Scalar(200, 200, 100), 1);
   Mat outImg;

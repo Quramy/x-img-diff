@@ -377,6 +377,7 @@ namespace ph {
       } else if (innerRects.size() > 0 && outerRects.size() > 0) {
         vector<Rect> s1, s2;
         copy(outerRects.begin(), outerRects.end(), back_inserter(innerRects));
+        rectu::mergeRects(innerRects, innerRects, gridSize);
         rectu::shiftRects(innerRects, s1, r1.x, r1.y);
         rectu::shiftRects(innerRects, s2, r2.x, r2.y);
         result.push_back(PixelMatchingResult(r1, updatedR1, s1, r2, updatedR2, s2));
@@ -414,8 +415,8 @@ namespace ph {
           rj.bounding2 = c2;
           copy(ri.diffMarkers1.begin(), ri.diffMarkers1.end(), back_inserter(rj.diffMarkers1));
           copy(ri.diffMarkers2.begin(), ri.diffMarkers2.end(), back_inserter(rj.diffMarkers2));
-          rectu::mergeRects(rj.diffMarkers1, rj.diffMarkers1, 3);
-          rectu::mergeRects(rj.diffMarkers2, rj.diffMarkers2, 3);
+          rectu::mergeRects(rj.diffMarkers1, rj.diffMarkers1, 10);
+          rectu::mergeRects(rj.diffMarkers2, rj.diffMarkers2, 10);
           connectedPairs.at(i).push_back(j);
         }
       }
@@ -547,7 +548,8 @@ namespace ph {
     vector<PixelMatchingResult> matchingResults;
     vector<Rect> urects1, urects2;
     int countOfExpandRects = pixelMatch(img1, matchedRects1, img2, matchedRects2, cv, matchingResults, urects1, urects2, config);
-    mergeResultIfSameCenter(matchingResults, cv, cv);
+    vector<Point2i> cvo;
+    mergeResultIfSameCenter(matchingResults, cv, cvo);
 
     int rk = (cv.size() - countOfExpandRects) * 6 + 10;
     if (config.debug) {
@@ -580,7 +582,7 @@ namespace ph {
           st.push_back(r);
         }
       }
-      rectu::mergeRects(strayingRects1, strayingRects1, 8);
+      rectu::mergeRects(st, strayingRects1, 8);
     } else {
       strayingRects1 = vector<Rect>();
     }
