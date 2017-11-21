@@ -241,7 +241,7 @@ namespace ph {
         if (intersect(r, y1Bounds, connected, 0)) ey1 = max(ey1, r.br().y);
         if (intersect(r, y2Bounds, connected, 0)) ey2 = min(ey2, r.tl().y);
       }
-      auto outCandidate = Rect(Point2i(ex1 + 1, ey1 + 1), Point2i(ex2 -1, ey2 - 1));
+      auto outCandidate = Rect(Point2i(ex1 + 1, ey1 + 1), Point2i(ex2, ey2));
       if (ex1 < 0 || ey1 < 0 || ex2 >= cols || ey2 >= rows) {
         out = outCandidate;
         return false;
@@ -253,7 +253,7 @@ namespace ph {
         if (intersect(r, upperBound, connected, 0)) ey1 = max(ey1, r.br().y);
         if (intersect(r, lowerBound, connected, 0)) ey2 = min(ey2, r.tl().y);
       }
-      outCandidate = Rect(Point2i(ex1 + 1, ey1 + 1), Point2i(ex2 -1, ey2 - 1));
+      outCandidate = Rect(Point2i(ex1 + 1, ey1 + 1), Point2i(ex2, ey2));
       out = outCandidate;
       return true;
     }
