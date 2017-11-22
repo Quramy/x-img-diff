@@ -1,7 +1,7 @@
 # x-img-diff
-Compare two image using [OpenCV](https://docs.opencv.org/3.3.0/) local features matching.
+Detect structural difference information of 2 images considering into translation.
 
-```
+```sh
 ximgdiff example/img/after.png example/img/before.png out.png
 ```
 
@@ -12,6 +12,12 @@ ximgdiff example/img/after.png example/img/before.png out.png
 | out.png |
 | :--: |
 | <img src="example/img/out.png" width="80%" > |
+
+Each rectangle stands for:
+
+- Cyan: Matching region's bounding box.
+- Red: Different parts in the Matching region.
+- Purple: Key points region not included any matching regions.
 
 ## Usage
 
