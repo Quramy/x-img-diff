@@ -576,7 +576,7 @@ namespace ph {
       for (auto& r: strayingRects1) {
         bool x = true;
         for (auto& mr: matchingResults) {
-          x = x && !rectu::intersect(mr.bounding1, r, c);
+          x = x && !rectu::intersect(mr.bounding1, r, c, 2);
         }
         if (x) {
           st.push_back(r);
@@ -593,7 +593,7 @@ namespace ph {
       for (auto& r: strayingRects2) {
         bool x = true;
         for (auto& mr: matchingResults) {
-          x = x && !rectu::intersect(mr.bounding2, r, c);
+          x = x && !rectu::intersect(mr.bounding2, r, c, 2);
         }
         if (x) {
           st.push_back(r);
