@@ -52,6 +52,16 @@ namespace ph {
     this->strayingRects2 = strayingRects2;
   }
 
+  template<typename T>
+  void sampling(vector<T>& in, const int n) {
+    vector<T> xxx;
+    int l = in.size();
+    for (int i = 0; i < n; ++i) {
+      xxx.push_back(in[i * l / n]);
+    }
+    in = xxx;
+  }
+
   struct Tension {
     int x1;
     int y1;
@@ -406,9 +416,9 @@ namespace ph {
       for (int j = i + 1; j < l; ++j) {
         auto& rj = results.at(j);
         auto& cvj = cv.at(j);
-        if (cvi.x - cvj.x > 2 || cvi.x - cvj.x < -2 ||  cvi.y - cvj.y > 2 || cvi.y - cvj.y < -2) continue;
+        if (cvi.x - cvj.x > 3 || cvi.x - cvj.x < -3 ||  cvi.y - cvj.y > 3 || cvi.y - cvj.y < -3) continue;
         Rect c1, c2;
-        if (rectu::intersect(ri.bounding1, rj.bounding1, c1, 3) && rectu::intersect(ri.bounding2, rj.bounding2, c2, 3)) {
+        if (rectu::intersect(ri.bounding1, rj.bounding1, c1, 8) && rectu::intersect(ri.bounding2, rj.bounding2, c2, 8)) {
           ri.bounding1 = c1;
           ri.bounding2 = c2;
           rj.bounding1 = c1;
@@ -437,18 +447,17 @@ namespace ph {
   void detectDiff(const Mat& img1, const Mat& img2, DiffResult& out, const DiffConfig& config) {
     Mat imgIn1, imgIn2;
     if (config.useCanny) {
-      Canny(img1, imgIn1, 10, 40);
-      Canny(img2, imgIn2, 10, 40);
+      Canny(img1, imgIn1, 0, 0);
+      Canny(img2, imgIn2, 0, 0);
     } else {
       imgIn1 = img1;
       imgIn2 = img2;
     }
 
-    auto akaze = AKAZE::create(AKAZE::DESCRIPTOR_MLDB, 0, 3, 0.001f, 4, 4, KAZE::DIFF_PM_G2);
+    auto f2d = AKAZE::create();
     vector<KeyPoint> kp1, kp2;
-    Mat des1, des2, mask;
-    akaze->detectAndCompute(imgIn1, mask, kp1, des1);
-    akaze->detectAndCompute(imgIn2, mask, kp2, des2);
+    f2d->detect(imgIn1, kp1);
+    f2d->detect(imgIn2, kp2);
 
     if (config.debug) {
       cout << "Input image1 size: " << img1.cols << "x" << img1.rows << endl;
@@ -456,6 +465,18 @@ namespace ph {
       cout << "The num of keypoints(img1): " << kp1.size() << endl;
       cout << "The num of keypoints(img2): " << kp2.size() << endl;
     }
+
+    const int kpmax = 1600;
+    if (kp1.size() > kpmax) {
+      if (config.debug) {
+        cout << "Sample keypoints to:" << kpmax << endl;
+      }
+      sampling(kp1, kpmax);
+    }
+
+    Mat des1, des2;
+    f2d->compute(imgIn1, kp1, des1);
+    f2d->compute(imgIn2, kp2, des2);
 
     auto matches = matchKps(des1, des2);
     const int MAX_X_DIST = config.thresholdTransX;
@@ -473,13 +494,7 @@ namespace ph {
       if (config.debug) {
         cout << "Sample matches to:" << fmax << endl;
       }
-      vector<vector<DMatch>> xxx;
-      int l = filteredMatches.size();
-      for (int i = 0; i < fmax; ++i) {
-        int ni = i * l / fmax;
-        xxx.push_back(filteredMatches[ni]);
-      }
-      filteredMatches = xxx;
+      sampling(filteredMatches, fmax);
     }
 
     set<int> s{};
