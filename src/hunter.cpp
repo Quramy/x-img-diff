@@ -446,13 +446,13 @@ namespace ph {
 
   void detectDiff(const Mat& img1, const Mat& img2, DiffResult& out, const DiffConfig& config) {
     Mat imgIn1, imgIn2;
-    if (config.useCanny) {
-      Canny(img1, imgIn1, 0, 0);
-      Canny(img2, imgIn2, 0, 0);
-    } else {
-      imgIn1 = img1;
-      imgIn2 = img2;
-    }
+    // if (config.useCanny) {
+    Canny(img1, imgIn1, 0, 10);
+    Canny(img2, imgIn2, 0, 10);
+    // } else {
+    //   imgIn1 = img1;
+    //   imgIn2 = img2;
+    // }
 
     auto f2d = AKAZE::create();
     vector<KeyPoint> kp1, kp2;
@@ -565,59 +565,91 @@ namespace ph {
     int countOfExpandRects = pixelMatch(img1, matchedRects1, img2, matchedRects2, cv, matchingResults, urects1, urects2, config);
     vector<Point2i> cvo;
     mergeResultIfSameCenter(matchingResults, cv, cvo);
+    
+    for(auto& m: matchingResults) {
+      rectangle(imgIn1, m.bounding1, Scalar(0), CV_FILLED);
+      rectangle(imgIn2, m.bounding2, Scalar(0), CV_FILLED);
+    }
+    vector<Rect> strSeeds1, fss1;
+    rectu::nonzeroRects(imgIn1, config.gridSize / 2, config.gridSize / 2, strSeeds1);
+    for(auto& r: strSeeds1) {
+      if (r.width <= 3 || r.height <= 3) continue;
+      bool x = true;
+      Rect c;
+      for (auto& mr: matchingResults) {
+        x = x && !rectu::intersect(mr.bounding1, r, c, 2);
+      }
+      if (x) fss1.push_back(r);
+    }
+    rectu::mergeRects(fss1, fss1, config.gridSize);
 
-    int rk = (cv.size() - countOfExpandRects) * 6 + 10;
-    if (config.debug) {
-      cout << "Initial cluster size[Strayng points]: " << rk << endl;
-    }
-    vector<Rect> strayingRects1, strayingRects2;
-    auto strayngPoints1 = vector<KeyPoint>();
-    for (auto& kp: notCategorizedKp1) {
-      if (!rectu::inBox(kp.pt, urects1)) {
-        strayngPoints1.push_back(kp);
-      }
-    }
-    auto strayngPoints2 = vector<KeyPoint>();
-    for (auto& kp: notCategorizedKp2) {
-      if (!rectu::inBox(kp.pt, urects2)) {
-        strayngPoints2.push_back(kp);
-      }
-    }
-    vector<vector<KeyPoint>> ckp1, ckp2;
-    if (clusterKeyPoints(strayngPoints1, ckp1, rk)) {
-      rectu::createRectsFromKeypoints(ckp1, strayingRects1, true);
-      auto st = vector<Rect>();
+    vector<Rect> strSeeds2, fss2;
+    rectu::nonzeroRects(imgIn2, config.gridSize / 2, config.gridSize / 2, strSeeds2);
+    for(auto& r: strSeeds2) {
+      if (r.width <= 3 || r.height <= 3) continue;
+      bool x = true;
       Rect c;
-      for (auto& r: strayingRects1) {
-        bool x = true;
-        for (auto& mr: matchingResults) {
-          x = x && !rectu::intersect(mr.bounding1, r, c, 2);
-        }
-        if (x) {
-          st.push_back(r);
-        }
+      for (auto& mr: matchingResults) {
+        x = x && !rectu::intersect(mr.bounding2, r, c, 2);
       }
-      rectu::mergeRects(st, strayingRects1, 8);
-    } else {
-      strayingRects1 = vector<Rect>();
+      if (x) fss2.push_back(r);
     }
-    if (clusterKeyPoints(strayngPoints2, ckp2, rk)) {
-      rectu::createRectsFromKeypoints(ckp2, strayingRects2, true);
-      auto st = vector<Rect>();
-      Rect c;
-      for (auto& r: strayingRects2) {
-        bool x = true;
-        for (auto& mr: matchingResults) {
-          x = x && !rectu::intersect(mr.bounding2, r, c, 2);
-        }
-        if (x) {
-          st.push_back(r);
-        }
-      }
-      rectu::mergeRects(st, strayingRects2, 8);
-    } else {
-      strayingRects2 = vector<Rect>();
-    }
+    rectu::mergeRects(fss2, fss2, config.gridSize);
+
+    // int rk = (cv.size() - countOfExpandRects) * 6 + 10;
+    // if (config.debug) {
+    //   cout << "Initial cluster size[Strayng points]: " << rk << endl;
+    // }
+    // vector<Rect> strayingRects1, strayingRects2;
+    auto strayingRects1 = fss1;
+    // auto strayngPoints1 = vector<KeyPoint>();
+    // for (auto& kp: notCategorizedKp1) {
+    //   if (!rectu::inBox(kp.pt, urects1)) {
+    //     strayngPoints1.push_back(kp);
+    //   }
+    // }
+    auto strayingRects2 = fss2;
+    // auto strayngPoints2 = vector<KeyPoint>();
+    // for (auto& kp: notCategorizedKp2) {
+    //   if (!rectu::inBox(kp.pt, urects2)) {
+    //     strayngPoints2.push_back(kp);
+    //   }
+    // }
+    // vector<vector<KeyPoint>> ckp1, ckp2;
+    // if (clusterKeyPoints(strayngPoints1, ckp1, rk)) {
+    //   rectu::createRectsFromKeypoints(ckp1, strayingRects1, true);
+    //   auto st = vector<Rect>();
+    //   Rect c;
+    //   for (auto& r: strayingRects1) {
+    //     bool x = true;
+    //     for (auto& mr: matchingResults) {
+    //       x = x && !rectu::intersect(mr.bounding1, r, c, 2);
+    //     }
+    //     if (x) {
+    //       st.push_back(r);
+    //     }
+    //   }
+    //   rectu::mergeRects(st, strayingRects1, 8);
+    // } else {
+    //   strayingRects1 = vector<Rect>();
+    // }
+    // if (clusterKeyPoints(strayngPoints2, ckp2, rk)) {
+    //   rectu::createRectsFromKeypoints(ckp2, strayingRects2, true);
+    //   auto st = vector<Rect>();
+    //   Rect c;
+    //   for (auto& r: strayingRects2) {
+    //     bool x = true;
+    //     for (auto& mr: matchingResults) {
+    //       x = x && !rectu::intersect(mr.bounding2, r, c, 2);
+    //     }
+    //     if (x) {
+    //       st.push_back(r);
+    //     }
+    //   }
+    //   rectu::mergeRects(st, strayingRects2, 8);
+    // } else {
+    //   strayingRects2 = vector<Rect>();
+    // }
 
     DiffResult result(matchingResults, strayingRects1, strayingRects2);
 

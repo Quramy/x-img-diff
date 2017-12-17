@@ -9,7 +9,7 @@ namespace ph {
   struct DiffConfig {
     bool debug = false;
     int thresholdTransX = 400;
-    int maxMatchingPoints = 400;
+    int maxMatchingPoints = 800;
     bool useCanny = true;
     int shiftDelta = 2;
     int connectionDistance = 60;
