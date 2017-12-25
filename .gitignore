@@ -39,3 +39,4 @@
 
 # default build dir
 build/
+compile_commands.json
